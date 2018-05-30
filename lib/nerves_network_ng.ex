@@ -3,16 +3,13 @@ defmodule Nerves.NetworkNG do
   Documentation for Nerves.NetworkNG.
   """
 
-  @doc """
-  Hello world.
+  @doc "Bring an interface up."
+  def ifup(_interface) do
 
-  ## Examples
+  end
 
-      iex> Nerves.NetworkNg.hello
-      :world
+  @doc "Bring an interface down."
+  def ifdown(_interface) do
 
-  """
-  def hello do
-    :world
   end
 end
