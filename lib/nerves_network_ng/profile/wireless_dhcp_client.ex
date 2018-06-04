@@ -7,11 +7,11 @@ defmodule Nerves.NetworkNG.Profile.WirelessDHCPClient do
   @behaviour Nerves.NetworkNG.Profile
 
   def settings(ifname) do
-    settings = [ssid: "hey!", psk: "whoops"]
-    iface(ifname)
-    |> wireless(settings)
-    |> dhcp()
-    |> commit()
+    # settings = [ssid: "hey!", psk: "whoops"]
+    # iface(ifname)
+    # |> wireless(settings)
+    # |> dhcp()
+    # |> commit()
   end
 
 end
