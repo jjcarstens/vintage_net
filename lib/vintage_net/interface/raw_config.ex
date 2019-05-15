@@ -41,7 +41,7 @@ defmodule VintageNet.Interface.RawConfig do
 
   @type t :: %__MODULE__{
           ifname: VintageNet.ifname(),
-          type: atom(),
+          type: [module],
           source_config: map(),
           require_interface: boolean(),
           retry_millis: non_neg_integer(),
@@ -55,4 +55,29 @@ defmodule VintageNet.Interface.RawConfig do
         }
 
   def unimplemented_ioctl(_, _), do: {:error, :unimplemented}
+
+  @spec add_cleanup_files(t(), [file_contents]) :: t()
+  def add_cleanup_files(%{cleanup_files: initial} = raw_config, new) do
+    %{raw_config | cleanup_files: [initial | new]}
+  end
+
+  @spec add_files(t(), [file_contents]) :: t()
+  def add_files(%{files: initial} = raw_config, new) do
+    %{raw_config | files: initial ++ new}
+  end
+
+  @spec add_down_cmds(t(), [command]) :: t()
+  def add_down_cmds(%{down_cmds: initial} = raw_config, new) do
+    %{raw_config | down_cmds: initial ++ new}
+  end
+
+  @spec add_up_cmds(t(), [command]) :: t()
+  def add_up_cmds(%{up_cmds: initial} = raw_config, new) do
+    %{raw_config | up_cmds: initial ++ new}
+  end
+
+  @spec ok(t()) :: {:ok, t()}
+  def ok(raw_config) do
+    {:ok, raw_config}
+  end
 end

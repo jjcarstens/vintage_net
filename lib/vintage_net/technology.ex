@@ -11,7 +11,7 @@ defmodule VintageNet.Technology do
   @doc """
   Convert a technology-specific configuration to one for VintageNet
   """
-  @callback to_raw_config(VintageNet.ifname(), config :: map(), opts :: keyword()) ::
+  @callback to_raw_config(RawConfig.t(), opts :: keyword()) ::
               {:ok, RawConfig.t()} | {:error, any()}
 
   @doc """

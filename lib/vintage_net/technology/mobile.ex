@@ -4,7 +4,7 @@ defmodule VintageNet.Technology.Mobile do
   alias VintageNet.Interface.RawConfig
 
   @impl true
-  def to_raw_config(ifname, %{type: __MODULE__, pppd: pppd_config} = config, opts) do
+  def to_raw_config(%{source_config: %{pppd: pppd_config}} = raw_config, opts) do
     mknod = Keyword.fetch!(opts, :bin_mknod)
     killall = Keyword.fetch!(opts, :bin_killall)
     chat_bin = Keyword.fetch!(opts, :bin_chat)
@@ -21,19 +21,15 @@ defmodule VintageNet.Technology.Mobile do
       {:run, killall, ["-q", "pppd"]}
     ]
 
-    {:ok,
-     %RawConfig{
-       ifname: ifname,
-       type: __MODULE__,
-       source_config: config,
-       files: files,
-       up_cmds: up_cmds,
-       down_cmds: down_cmds
-     }}
+    raw_config
+    |> RawConfig.add_files(files)
+    |> RawConfig.add_up_cmds(up_cmds)
+    |> RawConfig.add_down_cmds(down_cmds)
+    |> RawConfig.ok()
   end
 
-  def to_raw_config(_ifname, _config, _opts) do
-    {:error, :bad_configuration}
+  def to_raw_config(raw_config, _opts) do
+    {:ok, raw_config}
   end
 
   @impl true

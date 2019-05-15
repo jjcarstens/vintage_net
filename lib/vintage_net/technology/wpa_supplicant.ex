@@ -1,54 +1,42 @@
-defmodule VintageNet.Technology.WiFi do
+defmodule VintageNet.Technology.WpaSupplicant do
   @behaviour VintageNet.Technology
 
   alias VintageNet.WiFi.{Scan, WPA2}
   alias VintageNet.Interface.RawConfig
-  alias VintageNet.IP.ConfigToInterfaces
 
   @impl true
-  def to_raw_config(ifname, %{type: __MODULE__, wifi: wifi_config} = config, opts) do
-    ifup = Keyword.fetch!(opts, :bin_ifup)
-    ifdown = Keyword.fetch!(opts, :bin_ifdown)
+  def to_raw_config(%{ifname: ifname, source_config: %{wifi: wifi_config}} = raw_config, opts) do
     wpa_supplicant = Keyword.fetch!(opts, :bin_wpa_supplicant)
     killall = Keyword.fetch!(opts, :bin_killall)
     tmpdir = Keyword.fetch!(opts, :tmpdir)
     regulatory_domain = Keyword.fetch!(opts, :regulatory_domain)
 
-    network_interfaces_path = Path.join(tmpdir, "network_interfaces.#{ifname}")
     wpa_supplicant_conf_path = Path.join(tmpdir, "wpa_supplicant.conf.#{ifname}")
     control_interface_path = Path.join(tmpdir, "wpa_supplicant")
 
     files = [
-      {network_interfaces_path, ConfigToInterfaces.config_to_interfaces_contents(ifname, config)},
       {wpa_supplicant_conf_path,
        wifi_to_supplicant_contents(wifi_config, control_interface_path, regulatory_domain)}
     ]
 
     up_cmds = [
       {:run_ignore_errors, killall, ["-q", "wpa_supplicant"]},
-      {:run, wpa_supplicant, ["-B", "-i", ifname, "-c", wpa_supplicant_conf_path, "-dd"]},
-      {:run, ifup, ["-i", network_interfaces_path, ifname]}
+      {:run, wpa_supplicant, ["-B", "-i", ifname, "-c", wpa_supplicant_conf_path, "-dd"]}
     ]
 
     down_cmds = [
-      {:run, ifdown, ["-i", network_interfaces_path, ifname]},
       {:run, killall, ["-q", "wpa_supplicant"]}
     ]
 
-    {:ok,
-     %RawConfig{
-       ifname: ifname,
-       type: __MODULE__,
-       source_config: config,
-       files: files,
-       cleanup_files: [Path.join(control_interface_path, ifname)],
-       child_specs: [{VintageNet.Interface.ConnectivityChecker, ifname}],
-       up_cmds: up_cmds,
-       down_cmds: down_cmds
-     }}
+    raw_config
+    |> RawConfig.add_files(files)
+    |> RawConfig.add_cleanup_files([Path.join(control_interface_path, ifname)])
+    |> RawConfig.add_up_cmds(up_cmds)
+    |> RawConfig.add_down_cmds(down_cmds)
+    |> RawConfig.ok()
   end
 
-  def to_raw_config(ifname, %{type: __MODULE__}, opts) do
+  def to_raw_config(%{ifname: ifname} = raw_config, opts) do
     wpa_supplicant = Keyword.fetch!(opts, :bin_wpa_supplicant)
     killall = Keyword.fetch!(opts, :bin_killall)
     tmpdir = Keyword.fetch!(opts, :tmpdir)
@@ -68,16 +56,12 @@ defmodule VintageNet.Technology.WiFi do
       {:run, killall, ["-q", "wpa_supplicant"]}
     ]
 
-    {:ok,
-     %RawConfig{
-       ifname: ifname,
-       type: __MODULE__,
-       files: files,
-       child_specs: [{VintageNet.Interface.ConnectivityChecker, ifname}],
-       up_cmds: up_cmds,
-       down_cmds: down_cmds,
-       cleanup_files: [Path.join(control_interface_path, ifname)]
-     }}
+    raw_config
+    |> RawConfig.add_files(files)
+    |> RawConfig.add_cleanup_files([Path.join(control_interface_path, ifname)])
+    |> RawConfig.add_up_cmds(up_cmds)
+    |> RawConfig.add_down_cmds(down_cmds)
+    |> RawConfig.ok()
   end
 
   def to_raw_config(_ifname, _config, _opts) do

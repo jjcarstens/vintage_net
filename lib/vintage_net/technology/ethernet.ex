@@ -1,37 +1,10 @@
 defmodule VintageNet.Technology.Ethernet do
   @behaviour VintageNet.Technology
-
   alias VintageNet.Interface.RawConfig
-  alias VintageNet.IP.ConfigToInterfaces
 
   @impl true
-  def to_raw_config(ifname, %{type: __MODULE__} = config, opts) do
-    ifup = Keyword.fetch!(opts, :bin_ifup)
-    ifdown = Keyword.fetch!(opts, :bin_ifdown)
-    tmpdir = Keyword.fetch!(opts, :tmpdir)
-
-    network_interfaces_path = Path.join(tmpdir, "network_interfaces.#{ifname}")
-
-    {:ok,
-     %RawConfig{
-       ifname: ifname,
-       type: __MODULE__,
-       source_config: config,
-       files: [
-         {network_interfaces_path,
-          ConfigToInterfaces.config_to_interfaces_contents(ifname, config)}
-       ],
-       child_specs: [{VintageNet.Interface.ConnectivityChecker, ifname}],
-       # ifup hangs forever until Ethernet is plugged in
-       up_cmd_millis: 60_000,
-       up_cmds: [{:run, ifup, ["-i", network_interfaces_path, ifname]}],
-       down_cmd_millis: 5_000,
-       down_cmds: [{:run, ifdown, ["-i", network_interfaces_path, ifname]}]
-     }}
-  end
-
-  def to_raw_config(_ifname, _config, _opts) do
-    {:error, :bad_configuration}
+  def to_raw_config(%RawConfig{} = raw_config, _opts) do
+    {:ok, %{raw_config | up_cmd_millis: 60_000, down_cmd_millis: 5_000}}
   end
 
   @impl true

@@ -58,10 +58,14 @@ defmodule VintageNet.Interface do
   """
   @spec to_raw_config(VintageNet.ifname(), map()) :: {:ok, RawConfig.t()} | {:error, any()}
   def to_raw_config(ifname, config) do
-    opts = Application.get_all_env(:vintage_net)
+    initial = %RawConfig{
+      type: config.type,
+      ifname: ifname,
+      source_config: config
+    }
 
-    with {:ok, technology} <- Map.fetch(config, :type),
-         {:ok, raw_config} <- technology.to_raw_config(ifname, config, opts) do
+    with {:ok, type} <- Map.fetch(config, :type),
+         {:ok, raw_config} <- do_to_raw_config(type, initial) do
       {:ok, raw_config}
     else
       :error -> {:error, :type_missing}
@@ -69,18 +73,26 @@ defmodule VintageNet.Interface do
     end
   end
 
+  defp do_to_raw_config([technology | rest], %RawConfig{} = raw_config) do
+    opts = Application.get_all_env(:vintage_net)
+
+    case technology.to_raw_config(raw_config, opts) do
+      {:ok, raw_config} -> do_to_raw_config(rest, raw_config)
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp do_to_raw_config([], raw_config), do: {:ok, raw_config}
+
+  defp do_to_raw_config(technology, raw_config), do: do_to_raw_config([technology], raw_config)
+
   @doc """
   Set a configuration on an interface
   """
   @spec configure(VintageNet.ifname(), map()) :: :ok | {:error, any()}
   def configure(ifname, config) do
-    opts = Application.get_all_env(:vintage_net)
-
-    with {:ok, technology} <- Map.fetch(config, :type),
-         {:ok, raw_config} <- technology.to_raw_config(ifname, config, opts) do
-      configure(raw_config)
-    else
-      :error -> {:error, :type_missing}
+    case to_raw_config(ifname, config) do
+      {:ok, raw_config} -> configure(raw_config)
       {:error, reason} -> {:error, reason}
     end
   end
@@ -326,7 +338,7 @@ defmodule VintageNet.Interface do
         %State{} = data
       ) do
     # _ = Logger.debug(":configured -> run ioctl")
-
+    # TODO make this work with a stack of types
     # Delegate the ioctl to the technology
     mfa = {data.config.type, :ioctl, [data.ifname, command, args]}
     new_data = run_ioctl(data, from, mfa)

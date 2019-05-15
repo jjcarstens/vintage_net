@@ -5,14 +5,16 @@ defmodule VintageNet.Technology.Null do
 
   @moduledoc """
   An interface with this technology is unconfigured
+  Putting the null technology in a stack will clear
+  the stack of config up to this point.
   """
   @impl true
-  def to_raw_config(ifname, _config \\ %{}, _opts \\ []) do
+  def to_raw_config(%{ifname: ifname} = raw_config, _opts \\ []) do
     {:ok,
      %RawConfig{
        ifname: ifname,
-       type: __MODULE__,
-       source_config: %{type: __MODULE__},
+       type: raw_config.type,
+       source_config: raw_config.source_config,
        require_interface: false
      }}
   end
