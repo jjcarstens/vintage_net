@@ -81,8 +81,8 @@ domain if using WiFi. In your main `config.exs`, add the following:
 config :vintage_net,
   regulatory_domain: "US",
   config: [
-    {"eth0", %{type: VintageNet.Technology.Ethernet, ipv4: %{method: :dhcp}}},
-    {"wlan0", %{type: VintageNet.Technology.WiFi}}
+    {"eth0", %{type: VintageNet.Technology.IfupDown, ipv4: %{method: :dhcp}}},
+    {"wlan0", %{type: [VintageNet.Technology.WpaSupplicant, VintageNet.Technology.IfupDown]}}
   ]
 ```
 
@@ -145,8 +145,8 @@ The only required key in the configuration maps is `:type`. All other keys
 follow from the type. `:type` should be set to a module that implements the
 `VintageNet.Technology` behaviour. The following are included:
 
-* `VintageNet.Technology.Ethernet` - Standard wired Ethernet
-* `VintageNet.Technology.WiFi` - Client configurations for 802.11 WiFi
+* `VintageNet.Technology.IfupDown` - Standard wired Ethernet
+* `VintageNet.Technology.WpaSupplicant` - Client configurations for 802.11 WiFi
 * `VintageNet.Technology.Mobile` - Cellular configurations (likely to be
   refactored to a separate library)
 * `VintageNet.Technology.Null` - An empty configuration useful for turning off a
@@ -162,13 +162,13 @@ when using Nerves.
 Currently only IPv4 support using DHCP is supported:
 
 ```elixir
-%{type: VintageNet.Technology.Ethernet, ipv4: %{method: :dhcp}}
+%{type: VintageNet.Technology.IfupDown, ipv4: %{method: :dhcp}}
 ```
 
 For example, to set the configuration at runtime:
 
 ```elixir
-iex> VintageNet.configure("eth0", %{type: VintageNet.Technology.Ethernet, ipv4: %{method: :dhcp}})
+iex> VintageNet.configure("eth0", %{type: VintageNet.Technology.IfupDown, ipv4: %{method: :dhcp}})
 :ok
 ```
 
@@ -187,7 +187,7 @@ WiFi configuration looks like this:
 
 ```elixir
 %{
-  type: VintageNet.Technology.WiFi,
+  type: [VintageNet.Technology.WpaSupplican, VintageNet.Technology.IfupDownt],
   wifi: %{
     key_mgmt: :wpa_psk,
     mode: :client,
@@ -221,7 +221,7 @@ Here's an example:
 
 ```elixir
 iex> VintageNet.configure("wlan0", %{
-      type: VintageNet.Technology.WiFi,
+      type: [VintageNet.Technology.WpaSupplican, VintageNet.Technology.IfupDownt],
       wifi: %{
         key_mgmt: :wpa_psk,
         mode: :client,
@@ -236,7 +236,7 @@ Example of WEP:
 
 ```elixir
 iex> VintageNet.configure("wlan0", %{
-      type: VintageNet.Technology.WiFi,
+      type: [VintageNet.Technology.WpaSupplican, VintageNet.Technology.IfupDownt],
       wifi: %{
         ssid: "my_network_ssid",
         wep_key0: "42FEEDDEAFBABEDEAFBEEFAA55",
@@ -251,7 +251,7 @@ Example of WPA-EAP:
 
 ```elixir
 iex> VintageNet.configure("wlan0", %{
-      type: VintageNet.Technology.WiFi,
+      type: [VintageNet.Technology.WpaSupplican, VintageNet.Technology.IfupDownt],
       wifi: %{
         ssid: "testing",
         key_mgmt: :wpa_eap,
@@ -273,7 +273,7 @@ Example of host mode:
 
 ```elixir
 iex> VintageNet.configure("wlan0", %{
-      type: VintageNet.Technology.WiFi,
+      type: [VintageNet.Technology.WpaSupplican, VintageNet.Technology.IfupDownt],
       wifi: %{
         mode: :host,
         ssid: "test ssid",
@@ -306,10 +306,10 @@ iex> VintageNet.get_by_prefix([])
 [
   {["interface", "eth0", "connection"], :internet},
   {["interface", "eth0", "state"], "configured"},
-  {["interface", "eth0", "type"], VintageNet.Technology.Ethernet},
+  {["interface", "eth0", "type"], VintageNet.Technology.IfupDown},
   {["interface", "wlan0", "connection"], :internet},
   {["interface", "wlan0", "state"], "configured"},
-  {["interface", "wlan0", "type"], VintageNet.Technology.WiFi}
+  {["interface", "wlan0", "type"], VintageNet.Technology.WpaSupplicant}
 ]
 ```
 
